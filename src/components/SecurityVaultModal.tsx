@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Lock, ShieldCheck, Key, CheckCircle2, AlertOctagon } from 'lucide-react';
+import { X, Lock, ShieldCheck, Key, CheckCircle2, AlertOctagon, Server } from 'lucide-react';
+import { getCustomBackendUrl, setCustomBackendUrl } from '../services/api';
 
 interface SecurityVaultModalProps {
   vaultConfig: {
@@ -25,11 +26,13 @@ export const SecurityVaultModal: React.FC<SecurityVaultModalProps> = ({
   const [newKey, setNewKey] = useState('');
   const [newSecret, setNewSecret] = useState('');
   const [status, setStatus] = useState(vaultConfig.status);
+  const [backendUrl, setBackendUrl] = useState(getCustomBackendUrl());
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setCustomBackendUrl(backendUrl.trim());
     onUpdateVault({
       exchange,
       apiKey: newKey || undefined,
@@ -129,6 +132,23 @@ export const SecurityVaultModal: React.FC<SecurityVaultModalProps> = ({
               onChange={(e) => setNewSecret(e.target.value)}
               className="w-full bg-[#141d33] border border-[#26375a] rounded-lg px-3 py-1.5 text-slate-100 focus:outline-none focus:border-cyan-400 font-mono"
             />
+          </div>
+
+          <div className="pt-2 border-t border-[#1f2b45]">
+            <label className="text-cyan-400 block mb-1 text-[11px] font-semibold flex items-center gap-1.5">
+              <Server className="w-3 h-3" />
+              Live Backend API Endpoint (For Wasmer Edge frontend):
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. https://ais-dev-7c3bgbkkox63xbxozbmkcq-145386986880.asia-southeast1.run.app"
+              value={backendUrl}
+              onChange={(e) => setBackendUrl(e.target.value)}
+              className="w-full bg-[#141d33] border border-[#26375a] rounded-lg px-3 py-1.5 text-slate-100 focus:outline-none focus:border-cyan-400 font-mono text-xs placeholder:text-slate-600"
+            />
+            <span className="text-[10px] text-slate-500 block mt-1">
+              Leave blank to use default same-origin requests, or paste your backend service URL so the Wasmer frontend connects directly to your engine and database.
+            </span>
           </div>
 
           <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#1f2b45]">

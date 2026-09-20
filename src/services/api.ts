@@ -62,8 +62,36 @@ export interface FullTradingState {
   strategyGeneratorState?: import('../types').StrategyGeneratorState;
 }
 
+const DEFAULT_API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
+export function getCustomBackendUrl(): string {
+  try {
+    const saved = localStorage.getItem('ky7_backend_url');
+    if (saved) return saved.replace(/\/$/, '');
+  } catch {}
+  return DEFAULT_API_BASE;
+}
+
+export function setCustomBackendUrl(url: string) {
+  try {
+    if (!url) {
+      localStorage.removeItem('ky7_backend_url');
+    } else {
+      localStorage.setItem('ky7_backend_url', url.replace(/\/$/, ''));
+    }
+  } catch {}
+}
+
+function apiUrl(path: string): string {
+  const base = getCustomBackendUrl();
+  if (base && path.startsWith('/')) {
+    return `${base}${path}`;
+  }
+  return path;
+}
+
 export async function fetchTradingState(): Promise<FullTradingState> {
-  const res = await fetch('/api/trading/state');
+  const res = await fetch(apiUrl('/api/trading/state'));
   if (!res.ok) throw new Error('Failed to fetch trading state');
   return res.json();
 }
@@ -75,7 +103,7 @@ export async function triggerKillSwitch(): Promise<{
   ordersCancelled: number;
   message: string;
 }> {
-  const res = await fetch('/api/trading/kill-switch', {
+  const res = await fetch(apiUrl('/api/trading/kill-switch'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -87,7 +115,7 @@ export async function controlEngine(
   action: 'START' | 'PAUSE' | 'RESUME' | 'RESET_KILL_SWITCH',
   mode?: TradingMode
 ): Promise<{ success: boolean; engineStatus: EngineStatus; tradingMode: TradingMode }> {
-  const res = await fetch('/api/trading/engine-control', {
+  const res = await fetch(apiUrl('/api/trading/engine-control'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action, mode }),
@@ -103,7 +131,7 @@ export async function placeManualOrder(order: {
   price?: number;
   size: number;
 }): Promise<{ success: boolean; filled: boolean; position?: Position; order?: Order }> {
-  const res = await fetch('/api/trading/order/manual', {
+  const res = await fetch(apiUrl('/api/trading/order/manual'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(order),
@@ -113,7 +141,7 @@ export async function placeManualOrder(order: {
 }
 
 export async function closePosition(positionId: string): Promise<{ success: boolean; trade: TradeRecord }> {
-  const res = await fetch('/api/trading/position/close', {
+  const res = await fetch(apiUrl('/api/trading/position/close'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ positionId }),
@@ -127,7 +155,7 @@ export async function updatePositionSlTp(
   stopLoss?: number,
   takeProfit?: number
 ): Promise<{ success: boolean; position: Position }> {
-  const res = await fetch('/api/trading/position/update-sl-tp', {
+  const res = await fetch(apiUrl('/api/trading/position/update-sl-tp'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ positionId, stopLoss, takeProfit }),
@@ -137,7 +165,7 @@ export async function updatePositionSlTp(
 }
 
 export async function cancelOrder(orderId: string): Promise<{ success: boolean; order: Order }> {
-  const res = await fetch('/api/trading/order/cancel', {
+  const res = await fetch(apiUrl('/api/trading/order/cancel'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ orderId }),
@@ -154,7 +182,7 @@ export async function updateStrategy(strategyData: {
   stopLossPercent?: number;
   takeProfitPercent?: number;
 }): Promise<{ success: boolean; strategy: StrategyConfig }> {
-  const res = await fetch('/api/trading/strategy/update', {
+  const res = await fetch(apiUrl('/api/trading/strategy/update'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(strategyData),
@@ -164,7 +192,7 @@ export async function updateStrategy(strategyData: {
 }
 
 export async function updateRiskSettings(settings: Partial<RiskSettings>): Promise<{ success: boolean; riskSettings: RiskSettings }> {
-  const res = await fetch('/api/trading/risk-settings', {
+  const res = await fetch(apiUrl('/api/trading/risk-settings'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(settings),
@@ -179,7 +207,7 @@ export async function updateVault(vaultData: {
   apiSecret?: string;
   status?: 'SEALED' | 'UNLOCKED_READ_TRADE';
 }): Promise<{ success: boolean }> {
-  const res = await fetch('/api/trading/vault/update', {
+  const res = await fetch(apiUrl('/api/trading/vault/update'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(vaultData),
@@ -189,25 +217,25 @@ export async function updateVault(vaultData: {
 }
 
 export async function fetchCandles(symbol: string): Promise<{ symbol: string; candles: Candle[] }> {
-  const res = await fetch(`/api/trading/candles/${encodeURIComponent(symbol)}`);
+  const res = await fetch(apiUrl(`/api/trading/candles/${encodeURIComponent(symbol)}`));
   if (!res.ok) throw new Error('Failed to fetch candles');
   return res.json();
 }
 
 export async function fetchOrderBook(symbol: string): Promise<OrderBook> {
-  const res = await fetch(`/api/trading/orderbook/${encodeURIComponent(symbol)}`);
+  const res = await fetch(apiUrl(`/api/trading/orderbook/${encodeURIComponent(symbol)}`));
   if (!res.ok) throw new Error('Failed to fetch order book');
   return res.json();
 }
 
 export async function fetchAuditLogs(): Promise<{ auditLogs: AuditLogEntry[] }> {
-  const res = await fetch('/api/trading/audit-logs');
+  const res = await fetch(apiUrl('/api/trading/audit-logs'));
   if (!res.ok) throw new Error('Failed to fetch audit logs');
   return res.json();
 }
 
 export async function runAIQuantAudit(symbol: string): Promise<AIAnalysisResult> {
-  const res = await fetch('/api/ai/market-audit', {
+  const res = await fetch(apiUrl('/api/ai/market-audit'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ symbol }),
@@ -218,7 +246,7 @@ export async function runAIQuantAudit(symbol: string): Promise<AIAnalysisResult>
 
 // Autonomous Grid Strategy API
 export async function fetchGridConfigs(): Promise<{ gridConfigs: Record<string, any> }> {
-  const res = await fetch('/api/trading/grid');
+  const res = await fetch(apiUrl('/api/trading/grid'));
   if (!res.ok) throw new Error('Failed to fetch grid strategies');
   return res.json();
 }
@@ -233,7 +261,7 @@ export async function updateGridConfig(data: {
   autoAdjustWithAtr: boolean;
   allocatedMarginUsdt: number;
 }): Promise<{ success: boolean; gridConfig: any }> {
-  const res = await fetch('/api/trading/grid/update', {
+  const res = await fetch(apiUrl('/api/trading/grid/update'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -251,7 +279,7 @@ export async function runBacktest(params: {
   takeProfitPercent: number;
   trailingStopMultiplier: number;
 }): Promise<any> {
-  const res = await fetch('/api/trading/backtest/run', {
+  const res = await fetch(apiUrl('/api/trading/backtest/run'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -262,13 +290,13 @@ export async function runBacktest(params: {
 
 // Strategy Incubator & Evolutionary Paper-Testing API
 export async function fetchIncubatedStrategies(): Promise<{ incubatedStrategies: any[] }> {
-  const res = await fetch('/api/trading/incubator');
+  const res = await fetch(apiUrl('/api/trading/incubator'));
   if (!res.ok) throw new Error('Failed to fetch incubated strategies');
   return res.json();
 }
 
 export async function generateNewStrategy(data?: { type?: string; focus?: string }): Promise<{ success: boolean; strategy: any }> {
-  const res = await fetch('/api/trading/incubator/generate', {
+  const res = await fetch(apiUrl('/api/trading/incubator/generate'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data || {}),
@@ -278,7 +306,7 @@ export async function generateNewStrategy(data?: { type?: string; focus?: string
 }
 
 export async function promoteIncubatedStrategy(strategyId: string): Promise<{ success: boolean; strategy: any; liveStrategies: StrategyConfig[] }> {
-  const res = await fetch('/api/trading/incubator/promote', {
+  const res = await fetch(apiUrl('/api/trading/incubator/promote'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ strategyId }),
@@ -288,7 +316,7 @@ export async function promoteIncubatedStrategy(strategyId: string): Promise<{ su
 }
 
 export async function scanStrategyDegradation(): Promise<{ success: boolean; incubatedStrategies: any[]; actionsTaken: number }> {
-  const res = await fetch('/api/trading/incubator/degradation-scan', {
+  const res = await fetch(apiUrl('/api/trading/incubator/degradation-scan'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -298,7 +326,7 @@ export async function scanStrategyDegradation(): Promise<{ success: boolean; inc
 
 // Owner Cold Storage Profit Sweeper API
 export async function fetchProfitSweeper(): Promise<{ profitSweeperConfig: any; eligibleSweepUsdt: number }> {
-  const res = await fetch('/api/trading/profit-sweep');
+  const res = await fetch(apiUrl('/api/trading/profit-sweep'));
   if (!res.ok) throw new Error('Failed to fetch profit sweeper config');
   return res.json();
 }
@@ -309,7 +337,7 @@ export async function updateProfitSweeper(data: {
   sweepPercentage?: number;
   autoSweepEnabled?: boolean;
 }): Promise<{ success: boolean; profitSweeperConfig: any }> {
-  const res = await fetch('/api/trading/profit-sweep/update', {
+  const res = await fetch(apiUrl('/api/trading/profit-sweep/update'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -325,7 +353,7 @@ export async function executeProfitSweep(sweepPercentage?: number): Promise<{
   eligibleSweepUsdt: number;
   totalSweptUsdt: number;
 }> {
-  const res = await fetch('/api/trading/profit-sweep/execute', {
+  const res = await fetch(apiUrl('/api/trading/profit-sweep/execute'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sweepPercentage }),
@@ -339,13 +367,13 @@ export async function executeProfitSweep(sweepPercentage?: number): Promise<{
 
 // Non-Critical Software Component Validator API
 export async function fetchSoftwareComponents(): Promise<{ softwareComponents: any[] }> {
-  const res = await fetch('/api/trading/components');
+  const res = await fetch(apiUrl('/api/trading/components'));
   if (!res.ok) throw new Error('Failed to fetch software components');
   return res.json();
 }
 
 export async function toggleSoftwareComponent(componentId: string): Promise<{ success: boolean; component: any; softwareComponents: any[] }> {
-  const res = await fetch('/api/trading/components/toggle', {
+  const res = await fetch(apiUrl('/api/trading/components/toggle'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ componentId }),
@@ -356,13 +384,13 @@ export async function toggleSoftwareComponent(componentId: string): Promise<{ su
 
 // Autonomous Update Manager Client APIs
 export async function fetchUpdateManagerState(): Promise<{ state: import('../types').UpdateManagerSystemState }> {
-  const res = await fetch('/api/trading/update-manager');
+  const res = await fetch(apiUrl('/api/trading/update-manager'));
   if (!res.ok) throw new Error('Failed to fetch update manager state');
   return res.json();
 }
 
 export async function checkAllUpdatesNow(): Promise<{ success: boolean; state: import('../types').UpdateManagerSystemState }> {
-  const res = await fetch('/api/trading/update-manager/check-now', {
+  const res = await fetch(apiUrl('/api/trading/update-manager/check-now'), {
     method: 'POST',
   });
   if (!res.ok) throw new Error('Failed to check updates');
@@ -374,7 +402,7 @@ export async function runUpdatePipeline(params: {
   simulateFailureStage?: string;
   simulateUntrusted?: boolean;
 }): Promise<{ success: boolean; result: any; state: import('../types').UpdateManagerSystemState }> {
-  const res = await fetch('/api/trading/update-manager/run-pipeline', {
+  const res = await fetch(apiUrl('/api/trading/update-manager/run-pipeline'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -391,7 +419,7 @@ export async function stepUpdatePipeline(params: {
   simulateFailureStage?: string;
   simulateUntrusted?: boolean;
 }): Promise<{ success: boolean; stageResult: any; package: any; state: import('../types').UpdateManagerSystemState }> {
-  const res = await fetch('/api/trading/update-manager/step-pipeline', {
+  const res = await fetch(apiUrl('/api/trading/update-manager/step-pipeline'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -404,7 +432,7 @@ export async function rollbackSystemVersion(params: {
   targetVersion?: string;
   reason?: string;
 }): Promise<{ success: boolean; rolledBackFrom: string; rolledBackTo: string; state: import('../types').UpdateManagerSystemState }> {
-  const res = await fetch('/api/trading/update-manager/rollback', {
+  const res = await fetch(apiUrl('/api/trading/update-manager/rollback'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -414,7 +442,7 @@ export async function rollbackSystemVersion(params: {
 }
 
 export async function toggleUpdateAutoDaemon(): Promise<{ success: boolean; autoCheckEnabled: boolean }> {
-  const res = await fetch('/api/trading/update-manager/toggle-auto', {
+  const res = await fetch(apiUrl('/api/trading/update-manager/toggle-auto'), {
     method: 'POST',
   });
   if (!res.ok) throw new Error('Failed to toggle auto daemon');
@@ -422,7 +450,7 @@ export async function toggleUpdateAutoDaemon(): Promise<{ success: boolean; auto
 }
 
 export async function resetCandidatePackage(): Promise<{ success: boolean; state: import('../types').UpdateManagerSystemState }> {
-  const res = await fetch('/api/trading/update-manager/reset-candidate', {
+  const res = await fetch(apiUrl('/api/trading/update-manager/reset-candidate'), {
     method: 'POST',
   });
   if (!res.ok) throw new Error('Failed to reset candidate package');
@@ -437,7 +465,7 @@ export async function fetchStrategyGeneratorState(): Promise<{
   success: boolean;
   state: import('../types').StrategyGeneratorState;
 }> {
-  const res = await fetch('/api/trading/strategy-generator/state');
+  const res = await fetch(apiUrl('/api/trading/strategy-generator/state'));
   if (!res.ok) throw new Error('Failed to fetch strategy generator state');
   return res.json();
 }
@@ -453,7 +481,7 @@ export async function generateStrategyCandidate(params: {
   candidate: import('../types').StrategyCandidate;
   state: import('../types').StrategyGeneratorState;
 }> {
-  const res = await fetch('/api/trading/strategy-generator/generate', {
+  const res = await fetch(apiUrl('/api/trading/strategy-generator/generate'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -470,7 +498,7 @@ export async function promoteCandidateToLive(versionId: string): Promise<{
   promotedCandidate: import('../types').StrategyCandidate;
   state: import('../types').StrategyGeneratorState;
 }> {
-  const res = await fetch('/api/trading/strategy-generator/promote', {
+  const res = await fetch(apiUrl('/api/trading/strategy-generator/promote'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ versionId }),
@@ -490,7 +518,7 @@ export async function recalculateObjectiveArena(params?: {
   state: import('../types').StrategyGeneratorState;
   benchmarkLeader: import('../types').StrategyCandidate;
 }> {
-  const res = await fetch('/api/trading/strategy-generator/recalculate-objective', {
+  const res = await fetch(apiUrl('/api/trading/strategy-generator/recalculate-objective'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params || {}),
@@ -503,7 +531,7 @@ export async function toggleAutoStrategyGen(): Promise<{
   success: boolean;
   autoGenerateOnRegimeShift: boolean;
 }> {
-  const res = await fetch('/api/trading/strategy-generator/toggle-auto', {
+  const res = await fetch(apiUrl('/api/trading/strategy-generator/toggle-auto'), {
     method: 'POST',
   });
   if (!res.ok) throw new Error('Failed to toggle auto strategy generation');

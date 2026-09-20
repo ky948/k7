@@ -39,6 +39,17 @@ let liveEngine: LiveTradingEngine | null = null;
 function getLiveEngine(){ if(!binanceConfigured()) throw new Error('Binance live credentials are not configured in the server secret store.'); if(!liveEngine) liveEngine=new LiveTradingEngine(); return liveEngine; }
 app.use(express.json());
 
+// Enable CORS for frontend clients (including Wasmer edge frontend https://ky7-87429.wasmer.app)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
+
 // Initialize Gemini Client
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
