@@ -26,18 +26,33 @@ jobs:
         run: npm run build
 
       - name: Setup Wasmer CLI
-        uses: wasmerio/setup-wasmer@v2
+        uses: wasmerio/setup-wasmer@v3
 
       - name: Deploy to Wasmer Edge
         env:
-          WASMER_TOKEN: ${{ secrets.WASMER_TOKEN }}
+          WASMER_TOKEN: ${{ secrets.WASMER_TOKEN || secrets.WASMER_AUTH_TOKEN || secrets.WASMER_API_TOKEN || secrets.WAP_TOKEN || secrets.WASMER_KEY }}
           WASMER_OWNER: ${{ secrets.WASMER_OWNER || vars.WASMER_OWNER || 'ky7' }}
         run: |
           if [ -z "${WASMER_TOKEN}" ]; then
-            echo "::error::WASMER_TOKEN secret is missing or empty. Please add it in GitHub Settings > Secrets and variables > Actions."
+            echo "::error title=Missing WASMER_TOKEN::Secret WASMER_TOKEN is not configured in this repository. Please go to Settings > Secrets and variables > Actions > New repository secret, name it WASMER_TOKEN, and paste your token (starts with wap_)."
+            echo "Instructions:"
+            echo "1. Obtain token from https://wasmer.io/settings/tokens"
+            echo "2. Add secret WASMER_TOKEN in GitHub repository settings"
             exit 1
           fi
-          echo "Deploying app ky7 to Wasmer Edge under owner ${WASMER_OWNER}..."
-          wasmer deploy --publish-package --bump --owner="${WASMER_OWNER}" --token="${WASMER_TOKEN}" --non-interactive || \
-          wasmer deploy --owner="${WASMER_OWNER}" --token="${WASMER_TOKEN}" --non-interactive || \
-          wasmer app deploy --token="${WASMER_TOKEN}"
+
+          # Update version in wasmer.toml to prevent 'version already published' collision
+          PKG_VERSION="0.1.${{ github.run_number }}"
+          echo "Updating package version to ${PKG_VERSION} in wasmer.toml..."
+          sed -i "s/^version = .*/version = \"${PKG_VERSION}\"/" wasmer.toml
+
+          echo "Authenticating Wasmer CLI..."
+          export WASMER_TOKEN="${WASMER_TOKEN}"
+          wasmer login "${WASMER_TOKEN}" || true
+
+          echo "Deploying app ky7 to Wasmer Edge..."
+          wasmer deploy --publish-package --owner="${WASMER_OWNER}" --no-persist-id --token="${WASMER_TOKEN}" || \
+          wasmer deploy --owner="${WASMER_OWNER}" --no-persist-id --token="${WASMER_TOKEN}" || \
+          wasmer deploy --publish-package --no-persist-id || \
+          wasmer deploy --no-persist-id || \
+          wasmer deploy

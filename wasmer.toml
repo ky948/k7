@@ -1,6 +1,6 @@
 [package]
 name = "ky7/web-app"
-version = "0.1.0"
+version = "0.1.1"
 description = "KY7 Autonomous Crypto Trading Platform Web App"
 license = "MIT"
 
