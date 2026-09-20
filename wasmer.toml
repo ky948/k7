@@ -1,0 +1,19 @@
+[package]
+name = "ky7/web-app"
+version = "0.1.0"
+description = "KY7 Autonomous Crypto Trading Platform Web App"
+license = "MIT"
+
+[dependencies]
+"wasmer/static-web-server" = "^1"
+
+[fs]
+"/public" = "dist"
+
+[[command]]
+name = "web"
+module = "wasmer/static-web-server:web-server"
+runner = "wasi"
+
+[command.annotations.wasi]
+main-args = ["-d", "/public", "-p", "80", "--fallback-page", "/public/index.html"]

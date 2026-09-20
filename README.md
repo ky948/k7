@@ -1,11 +1,25 @@
-<div align="center">
+# KY7 — Autonomous Crypto Trading Platform
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Private single-user crypto trading cockpit with adaptive strategy controls, autonomous-learning UI, risk controls, audit logging, and profit-sweep workflow.
 
-  <h1>Built with AI Studio</h2>
+## Quick start
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+    cp .env.example .env
+    npm install
+    npm run dev
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+Open the displayed local URL.
 
-</div>
+## Production
+
+    cp .env.example .env
+    # Set production secrets and infrastructure values.
+    docker compose up -d --build
+
+Live mode is exchange-backed: set `TRADING_MODE=LIVE_VAULT` only in the deployment secret store. In live mode the dashboard reads Binance account state rather than the simulator. Autonomous live trading remains opt-in via `LIVE_AUTONOMOUS_ENABLED=true`.
+
+See `docs/production-architecture.md`, `docs/live-operations.md`, and `docs/wasmer-deployment.md` for the production boundary, funding, withdrawals, and deployment operating model.
+
+## Important
+
+Trading is probabilistic and can lose money. No strategy or AI system can guarantee profit.
