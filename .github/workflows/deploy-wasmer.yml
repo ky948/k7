@@ -31,5 +31,6 @@ jobs:
       - name: Deploy to Wasmer Edge
         env:
           WASMER_TOKEN: ${{ secrets.WASMER_TOKEN }}
+          WASMER_OWNER: ${{ secrets.WASMER_OWNER || vars.WASMER_OWNER || 'ky7' }}
         run: |
-          wasmer deploy --publish-package --no-persist-id --token="${WASMER_TOKEN}"
+          wasmer deploy --publish-package --owner="${WASMER_OWNER}" --no-persist-id --token="${WASMER_TOKEN}"
