@@ -19,6 +19,19 @@ import {
 } from './src/types';
 import { BinanceSpotClient, binanceConfigured } from './src/binance';
 import { LiveTradingEngine } from './src/live-engine';
+import { neon, type NeonQueryFunction } from '@neondatabase/serverless';
+
+let neonSql: NeonQueryFunction<false, false> | null = null;
+function getNeonSql() {
+  if (!neonSql && process.env.DATABASE_URL) {
+    try {
+      neonSql = neon(process.env.DATABASE_URL);
+    } catch (e) {
+      console.error('Failed to initialize Neon SQL client:', e);
+    }
+  }
+  return neonSql;
+}
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -3046,8 +3059,29 @@ function evaluateAutonomousSignals() {
 }
 
 // REST APIs
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', engineStatus, uptimeSeconds: Math.floor((Date.now() - bootTimestamp) / 1000) });
+app.get('/api/health', async (req, res) => {
+  let databaseStatus: { connected: boolean; host?: string; error?: string } = { connected: false };
+  const sql = getNeonSql();
+  if (sql) {
+    try {
+      await sql`SELECT 1`;
+      let dbHost: string | undefined = undefined;
+      try {
+        if (process.env.DATABASE_URL) {
+          dbHost = new URL(process.env.DATABASE_URL).host;
+        }
+      } catch {}
+      databaseStatus = { connected: true, host: dbHost };
+    } catch (e: any) {
+      databaseStatus = { connected: false, error: e?.message || String(e) };
+    }
+  }
+  res.json({
+    status: 'ok',
+    engineStatus,
+    database: databaseStatus,
+    uptimeSeconds: Math.floor((Date.now() - bootTimestamp) / 1000)
+  });
 });
 
 app.get('/api/trading/live-readiness', async (req, res) => {
