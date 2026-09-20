@@ -31,7 +31,7 @@ jobs:
       - name: Deploy to Wasmer Edge
         env:
           WASMER_TOKEN: ${{ secrets.WASMER_TOKEN || secrets.WASMER_AUTH_TOKEN || secrets.WASMER_API_TOKEN || secrets.WAP_TOKEN || secrets.WASMER_KEY }}
-          WASMER_OWNER: ${{ secrets.WASMER_OWNER || vars.WASMER_OWNER || 'ky7' }}
+          WASMER_OWNER: ${{ secrets.WASMER_OWNER || vars.WASMER_OWNER || 'ky948' }}
         run: |
           if [ -z "${WASMER_TOKEN}" ]; then
             echo "::error title=Missing WASMER_TOKEN::Secret WASMER_TOKEN is not configured in this repository. Please go to Settings > Secrets and variables > Actions > New repository secret, name it WASMER_TOKEN, and paste your token (starts with wap_)."
@@ -50,9 +50,23 @@ jobs:
           export WASMER_TOKEN="${WASMER_TOKEN}"
           wasmer login "${WASMER_TOKEN}" || true
 
-          echo "Deploying app ky7 to Wasmer Edge..."
-          wasmer deploy --publish-package --owner="${WASMER_OWNER}" --no-persist-id --token="${WASMER_TOKEN}" || \
-          wasmer deploy --owner="${WASMER_OWNER}" --no-persist-id --token="${WASMER_TOKEN}" || \
+          # Dynamically resolve active Wasmer account
+          LOGGED_IN_USER=$(wasmer whoami 2>/dev/null | tr -d ' \r\n' || echo "")
+          if [ -n "${LOGGED_IN_USER}" ]; then
+            ACTUAL_OWNER="${LOGGED_IN_USER}"
+            echo "Logged in as Wasmer user: ${ACTUAL_OWNER}"
+          else
+            ACTUAL_OWNER="${WASMER_OWNER}"
+            echo "Using specified owner: ${ACTUAL_OWNER}"
+          fi
+
+          # Sync owner and package namespace to the actual authenticated account
+          sed -i "s/^owner: .*/owner: ${ACTUAL_OWNER}/" app.yaml
+          sed -i "s|^name = \".*/web-app\"|name = \"${ACTUAL_OWNER}/web-app\"|" wasmer.toml
+
+          echo "Deploying app ky7 to Wasmer Edge under owner ${ACTUAL_OWNER}..."
+          wasmer deploy --publish-package --owner="${ACTUAL_OWNER}" --no-persist-id --token="${WASMER_TOKEN}" || \
+          wasmer deploy --owner="${ACTUAL_OWNER}" --no-persist-id --token="${WASMER_TOKEN}" || \
           wasmer deploy --publish-package --no-persist-id || \
           wasmer deploy --no-persist-id || \
           wasmer deploy

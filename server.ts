@@ -39,7 +39,7 @@ let liveEngine: LiveTradingEngine | null = null;
 function getLiveEngine(){ if(!binanceConfigured()) throw new Error('Binance live credentials are not configured in the server secret store.'); if(!liveEngine) liveEngine=new LiveTradingEngine(); return liveEngine; }
 app.use(express.json());
 
-// Enable CORS for frontend clients (including Wasmer edge frontend https://ky7-87429.wasmer.app)
+// Enable CORS for frontend clients (including Wasmer edge frontend https://ky7-95275.wasmer.app)
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
