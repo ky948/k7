@@ -139,6 +139,15 @@ let portfolio = {
   eligibleSweepUsdt: 8430.5,
   totalSweptUsdt: 4000.0,
   liquidationDistancePercent: 46.8, // Distance to mathematical liquidation boundary
+  dailyPnlHistory7d: [
+    { date: 'Sep 14', dayLabel: 'Mon', netPnlUsdt: 840.50, netGrowthPercent: 0.89, closingNavUsdt: 95400.0 },
+    { date: 'Sep 15', dayLabel: 'Tue', netPnlUsdt: 1250.00, netGrowthPercent: 1.31, closingNavUsdt: 96650.0 },
+    { date: 'Sep 16', dayLabel: 'Wed', netPnlUsdt: -380.20, netGrowthPercent: -0.39, closingNavUsdt: 96269.8 },
+    { date: 'Sep 17', dayLabel: 'Thu', netPnlUsdt: 1620.40, netGrowthPercent: 1.68, closingNavUsdt: 97890.2 },
+    { date: 'Sep 18', dayLabel: 'Fri', netPnlUsdt: 910.30, netGrowthPercent: 0.93, closingNavUsdt: 98800.5 },
+    { date: 'Sep 19', dayLabel: 'Sat', netPnlUsdt: -210.00, netGrowthPercent: -0.21, closingNavUsdt: 98590.5 },
+    { date: 'Sep 20', dayLabel: 'Today', netPnlUsdt: 1409.50, netGrowthPercent: 1.43, closingNavUsdt: 100000.0 },
+  ],
 };
 
 // Owner Cold Storage Profit Sweeper

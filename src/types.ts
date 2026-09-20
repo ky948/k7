@@ -122,6 +122,14 @@ export interface RiskSettings {
   enforceStrictRiskGuards: boolean;
 }
 
+export interface DailyPnlRecord {
+  date: string; // e.g. "Sep 14" or "2026-09-14"
+  dayLabel: string; // e.g. "Mon", "Tue"
+  netPnlUsdt: number;
+  netGrowthPercent: number;
+  closingNavUsdt: number;
+}
+
 export interface PortfolioState {
   navUsdt: number;
   availableMarginUsdt: number;
@@ -138,6 +146,7 @@ export interface PortfolioState {
   totalSweptUsdt?: number | null;
   liquidationDistancePercent?: number;
   pnlSource?: string;
+  dailyPnlHistory7d?: DailyPnlRecord[];
 }
 
 export interface GridLevel {
